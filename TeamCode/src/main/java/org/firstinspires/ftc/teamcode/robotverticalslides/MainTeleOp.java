@@ -2,6 +2,7 @@
 package org.firstinspires.ftc.teamcode.robotverticalslides;
 
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -30,7 +31,7 @@ public class MainTeleOp extends HelperActions {
     double rotation = 0;
     double liftSpdMult = 0.8 ;
     double slideMax = -3000;
-    double slideMin = 0;
+    double slideMin = -100;
 
     @Override
     public void runOpMode() {
@@ -38,20 +39,27 @@ public class MainTeleOp extends HelperActions {
         driveActions = new DriveActions(telemetry, hardwareMap);
         slide  = hardwareMap.get(DcMotor.class, "slide");
         slide.setDirection(DcMotorSimple.Direction.FORWARD);
-        //slide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        slide.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        slide.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         slide.getCurrentPosition();
 
         telemetry.addData("Slide Encoder Tick", slide.getCurrentPosition());
 
 //        horizontalSlide = new HorizontalSlideActions(hardwareMap, telemetry);
         Servo supportSlide = hardwareMap.get(Servo.class, "supportSlide");
+        Servo rotationSlide = hardwareMap.get(Servo.class, "rotationSlide");
+        CRServo intakeSlide = hardwareMap.get(CRServo.class, "intakeSlide");
+        Servo grabberLinear = hardwareMap.get(Servo.class, "grabberLinear");
 //        horizontalWrist = new HorizontalWristActions(telemetry, hardwareMap);
 //       horizontalIntake = new HorizontalIntakeActions(telemetry, hardwareMap);
 //        verticalSlide = new VerticalSlideActions(hardwareMap, telemetry);
 //        verticalWrist = new VerticalWristActions(telemetry, hardwareMap);
 //        verticalGrabber = new VerticalGrabberActions(telemetry, hardwareMap);
 
-        supportSlide.setPosition(.5);
+        supportSlide.setPosition(.75);
+        rotationSlide.setPosition(1);
+        intakeSlide.setPower(0);
+        grabberLinear.setPosition(.1);
         //Set Speed for teleOp. Mecannum wheel speed.
         //driveActions.setSpeed(1.0);
 
@@ -75,8 +83,8 @@ public class MainTeleOp extends HelperActions {
 
             telemetry.addData("Joystick", gamepad2.left_stick_y);
 
-            changeSpeed(driveActions, gamepad1.dpad_up, gamepad1.dpad_down, false, false);
-            toggleSpeed(gamepad1.a);
+            //changeSpeed(driveActions, gamepad1.dpad_up, gamepad1.dpad_down, false, false);
+            //toggleSpeed(gamepad1.a);
 
 
             /** Gamepad 2 **/
@@ -91,22 +99,47 @@ public class MainTeleOp extends HelperActions {
 //            verticalGrabber.teleOp(gamepad2.y, gamepad2.x);
             slide.setPower(0);
 
+            //control the slide
             setSlide();
-
             telemetry.addData("Slide Encoder Tick", slide.getCurrentPosition());
+
+            //rotation servo control
+            if(gamepad2.x){
+                rotationSlide.setPosition(1);
+            }
+            else if(gamepad2.y){
+                rotationSlide.setPosition(.65);
+            }
+            //intake servo control
+            if(gamepad2.right_trigger >0){
+                intakeSlide.setPower(-gamepad2.right_trigger);
+            }
+            else if(gamepad2.left_trigger > 0){
+                intakeSlide.setPower(gamepad2.left_trigger);
+            }
+            else if (gamepad2.left_trigger == 0 && gamepad2.right_trigger == 0){
+                intakeSlide.setPower(0);
+            }
+
+            telemetry.addData("Right Trigger Value", gamepad2.right_trigger);
             telemetry.update();
 
 
-
-
-
+            //servo support the slide
             if(gamepad2.a) {
                 supportSlide.setPosition(.75);
                 //wait(5000);
             }
             else if(gamepad2.b){
                 supportSlide.setPosition(.5);
+            }
 
+            //linear servo to push the butter
+            if(gamepad2.right_bumper){
+                grabberLinear.setPosition(.65);
+            }
+            else if(gamepad2.left_bumper){
+                grabberLinear.setPosition(.1);
             }
 
         }
